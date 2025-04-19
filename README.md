@@ -26,12 +26,13 @@
 - Thông thường độ trễ phản hồi (Latency) thấp do tập Training Dataset Size lớn, do mô hình LLM được huấn luyện nhiều hơn nên sẽ ra quyết định nhanh hơn
 - Bài toán: Liệu tỉ lệ Latency cao > mean(Latency) có Dataset > mean(Dataset) có thực sự thấp hơn tỷ lệ Latency thấp < mean(Latency) có Dataset > mean(Dataset)
 - Kiểm định giả thiết
-+ H0: Tỷ lệ Dataset của Latency cao và Dataset của Latency thấp > mean(Dataset) là bằng nhau
-+ H1: Tỷ lệ Dataset > mean(Dataset) của Latency cao thấp Dataset > mean(Dataset) của Latency thấp
+	+ H0: Tỷ lệ Dataset của Latency cao và Dataset của Latency thấp > mean(Dataset) là bằng nhau
+	+ H1: Tỷ lệ Dataset > mean(Dataset) của Latency cao thấp Dataset > mean(Dataset) của Latency thấp
 - Kết quả:
-+ p-value = 0.03322 < 0.05
-+ Khoảng tin cậy -1.000000000 -0.008609752 nằm bên trái so với 0 -> p1 < p2
--> Với p-value = 0.03322 nhỏ hơn 0.05 và khoảng tin cậy không chứa 0, kết luận là có sự khác biệt đáng kể giữa tỷ lệ các nhóm khi phân loại theo Latency và Dataset Size. Tỷ lệ của nhóm Latency < mean(Latency) là 29.5%, cao hơn tỷ lệ của nhóm Latency > mean(Latency) là 21.5%.
+	+ p-value = 0.03322 < 0.05
+	+ Khoảng tin cậy -1.000000000 -0.008609752 nằm bên trái so với 0 -> p1 < p2
+	
+	-> Với p-value = 0.03322 nhỏ hơn 0.05 và khoảng tin cậy không chứa 0, kết luận là có sự khác biệt đáng kể giữa tỷ lệ các nhóm khi phân loại theo Latency và Dataset Size. Tỷ lệ của nhóm Latency < mean(Latency) là 29.5%, cao hơn tỷ lệ của nhóm Latency > mean(Latency) là 21.5%.
 
 
 
