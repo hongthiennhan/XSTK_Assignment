@@ -244,7 +244,7 @@ corrplot(cor_matrix,
 
 dev.off()
 
-# ---------- [Kiểm định phân phối chuẩn] ---------- #
+# ---------- [Kiểm định một mẫu phân phối chuẩn] ---------- #
 # Kiểm định Shapiro
 shapiro.test(llm_data$Speed)
 shapiro.test(llm_data$Latency)
@@ -262,7 +262,32 @@ t.test(llm_data$Dataset.Size, conf.level = 0.95)
 t.test(llm_data$Compute.Power, conf.level = 0.95)
 t.test(llm_data$Efficiency, conf.level = 0.95)
 
+# ---------- [Kiểm định hai mẫu phân phối chuẩn] ---------- #
+# Tính giá trị trung bình
+mean_latency <- mean(llm_data$Latency)
+mean_dataset <- mean(llm_data$Dataset.Size)
+
+# Tổng số mẫu
+total <- nrow(llm_data)
+
+# Tính tỷ lệ 1: Latency > mean(Latency) và Speed > mean(Speed)
+cond_latency_high <- subset(llm_data, Latency > mean_latency & Dataset.Size > mean_dataset)
+num_latency_high <- nrow(cond_latency_high)
+ratio_latency_high <- num_latency_high / total
+
+# Tính tỷ lệ 2: Latency < mean(Latency) và Speed > mean(Speed)
+cond_latency_low <- subset(llm_data, Latency < mean_latency & Dataset.Size > mean_dataset)
+num_latency_low <- nrow(cond_latency_low)
+ratio_latency_low <- num_latency_low / total
+
+# In kết quả
+cat("Tỷ lệ Latency > mean và Speed > mean: ", round(ratio_latency_high * 100, 2), "%\n")
+cat("Tỷ lệ Latency < mean và Speed > mean: ", round(ratio_latency_low * 100, 2), "%\n")
+prop_result <- prop.test(c(num_latency_high, num_latency_low), c(total, total),
+                         alternative = "less", correct = FALSE)
+prop_result
 # --------------------------------------------------------------------- #
+
 
 # Lọc dữ liệu có đầy đủ thông tin
 latency_data <- llm_data[!is.na(llm_data$Latency) & !is.na(llm_data$Provider), ]
