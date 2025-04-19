@@ -24,7 +24,7 @@
 
 ## Kiểm định hai mẫu
 - Thông thường độ trễ phản hồi (Latency) thấp do tập Training Dataset Size lớn, do mô hình LLM được huấn luyện nhiều hơn nên sẽ ra quyết định nhanh hơn
-- Bài toán: Liệu tỉ lệ Latency cao > mean(Latency) có Dataset > mean(Dataset) có thực sự thấp hơn tỷ lệ Latency thấp < mean(Latency) có Dataset > mean(Dataset)
+- Bài toán: Liệu tỷ lệ Latency cao > mean(Latency) có Dataset > mean(Dataset) có thực sự thấp hơn tỷ lệ Latency thấp < mean(Latency) có Dataset > mean(Dataset)
 - Kiểm định giả thiết
 	- H0: Tỷ lệ Dataset của Latency cao và Dataset của Latency thấp > mean(Dataset) là bằng nhau
 	- H1: Tỷ lệ Dataset > mean(Dataset) của Latency cao thấp Dataset > mean(Dataset) của Latency thấp
@@ -39,7 +39,7 @@
 
 
 
-
+# Từ từ tính :)))
 4. Phân tích
 2.1. Kiểm định giả thuyết thống kê
 Trong bài toán này, chúng ta sẽ thực hiện kiểm định giả thuyết thống kê để đánh giá sự khác biệt giữa các mô hình ngôn ngữ lớn (LLM) mà bạn đang phân tích. Mục tiêu là xác định xem có sự khác biệt có ý nghĩa thống kê về hiệu suất giữa các mô hình hay không.
