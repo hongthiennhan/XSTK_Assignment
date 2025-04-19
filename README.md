@@ -11,6 +11,25 @@
 		3.2.3. Biến phân loại -> lập bảng thống kê số lượng cho từng loại (hàm table)
 		3.2.4. hist, boxplot, pairs
 		3.2.5. Hướng xử lý dữ liệu (hơi lú, đoạn 10p-17p)
+
+# Thống kê suy diễn
+## Kiểm định một mẫu
+- Chọn mẫu Latency
+- Phân phối tương đối chuẩn
+- Chưa biết phương sai tổng thể
+- Kiểm định Shapiro
+- p-value = 5.944e-07 nhỏ hơn 0.05 rất nhiều -> không tuân theo phân phối chuẩn
+-> Mẫu dữ liệu có phân phối tùy ý, mẫu lớn
+- Sử dụng t.test() tìm được khoảng ước lượng là [8.593306; 10.124194] với độ tin cậy 95%
+
+
+
+
+
+
+
+
+
 4. Phân tích
 2.1. Kiểm định giả thuyết thống kê
 Trong bài toán này, chúng ta sẽ thực hiện kiểm định giả thuyết thống kê để đánh giá sự khác biệt giữa các mô hình ngôn ngữ lớn (LLM) mà bạn đang phân tích. Mục tiêu là xác định xem có sự khác biệt có ý nghĩa thống kê về hiệu suất giữa các mô hình hay không.

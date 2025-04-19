@@ -244,7 +244,23 @@ corrplot(cor_matrix,
 
 dev.off()
 
+# ---------- [Kiểm định phân phối chuẩn] ---------- #
+# Kiểm định Shapiro
+shapiro.test(llm_data$Speed)
+shapiro.test(llm_data$Latency)
+shapiro.test(llm_data$Price)
+shapiro.test(llm_data$Dataset.Size)
+shapiro.test(llm_data$Compute.Power)
+shapiro.test(llm_data$Efficiency)
+# Toàn bộ không tuân theo phân phối chuẩn vì p << 0.05
 
+# Tìm khoảng ước lượng
+t.test(llm_data$Speed, conf.level = 0.95)
+t.test(llm_data$Latency, conf.level = 0.95)
+t.test(llm_data$Price, conf.level = 0.95)
+t.test(llm_data$Dataset.Size, conf.level = 0.95)
+t.test(llm_data$Compute.Power, conf.level = 0.95)
+t.test(llm_data$Efficiency, conf.level = 0.95)
 
 # --------------------------------------------------------------------- #
 
