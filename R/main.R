@@ -286,7 +286,21 @@ cat("Tỷ lệ Latency < mean và Speed > mean: ", round(ratio_latency_low * 100
 prop_result <- prop.test(c(num_latency_high, num_latency_low), c(total, total),
                          alternative = "less", correct = FALSE)
 prop_result
+
 # --------------------------------------------------------------------- #
+# Kiểm định Shapiro???
+shapiro.test(llm_data$Speed)
+shapiro.test(llm_data$Latency)
+
+llm_data$SpeedGroup <- ifelse(llm_data$Speed > mean(llm_data$Speed, na.rm = TRUE),
+                                    "HighSpeed", "LowSpeed")
+
+leveneTest(Latency ~ as.factor(SpeedGroup), data = llm_data)
+
+
+
+# --------------------------------------------------------------------- #
+
 
 
 # Lọc dữ liệu có đầy đủ thông tin

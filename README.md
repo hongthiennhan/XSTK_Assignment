@@ -34,6 +34,7 @@
 	
 	-> Với p-value = 0.03322 nhỏ hơn 0.05 và khoảng tin cậy không chứa 0, kết luận là có sự khác biệt đáng kể giữa tỷ lệ các nhóm khi phân loại theo Latency và Dataset Size. Tỷ lệ của nhóm Latency < mean(Latency) là 29.5%, cao hơn tỷ lệ của nhóm Latency > mean(Latency) là 21.5%.
 
+# Phân tích phương sai
 
 
 
