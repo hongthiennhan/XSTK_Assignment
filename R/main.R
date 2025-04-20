@@ -8,7 +8,7 @@ names(llm_data)[names(llm_data) == "Latency..sec."] <- "Latency"
 names(llm_data)[names(llm_data) == "Benchmark..MMLU."] <- "Benchmark.MMLU"
 names(llm_data)[names(llm_data) == "Benchmark..Chatbot.Arena."] <- "Benchmark.Chatbot.Arena."
 names(llm_data)[names(llm_data) == "Price...Million.Tokens"] <- "Price"
-names(llm_data)[names(llm_data) == "Training.Dataset.Size"] <- "Dataset.Size"
+names(llm_data)[names(llm_data) == "Training.Compute.Power"] <- "Dataset.Size"
 names(llm_data)[names(llm_data) == "Energy.Efficiency"] <- "Efficiency"
 
 # Kiểm tra kích thước (số dòng, số cột)
@@ -286,7 +286,6 @@ cat("Tỷ lệ Latency < mean và Speed > mean: ", round(ratio_latency_low * 100
 prop_result <- prop.test(c(num_latency_high, num_latency_low), c(total, total),
                          alternative = "less", correct = FALSE)
 prop_result
-
 # --------------------------------------------------------------------- #
 # Kiểm định Shapiro???
 shapiro.test(llm_data$Speed)
@@ -327,7 +326,7 @@ abline(model, col = "red")
 
 
 # ----------------- hồi quy tuyến tính ----------------------#
-model <- lm(formula(llm_data$Speed ~ llm_data$Context.Window + llm_data$Latency + llm_data$Benchmark.MMLU + llm_data$Benchmark.Chatbot.Arena. + llm_data$Open.Source + llm_data$Price + llm_data$Dataset.Size + llm_data$Compute.Power + llm_data$Efficiency + llm_data$Quality.Rating + llm_data$Speed.Rating + llm_data$Price.Rating))
+model <- lm(formula(llm_data$Speed ~ llm_data$Context.Window + llm_data$Latency + llm_data$Benchmark.MMLU + llm_data$Benchmark.Chatbot.Arena. + llm_data$Open.Source + llm_data$Price + llm_data$Compute.Power + llm_data$Compute.Power + llm_data$Efficiency + llm_data$Quality.Rating + llm_data$Speed.Rating + llm_data$Price.Rating))
 summary(model)
 
 
