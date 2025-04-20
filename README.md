@@ -35,9 +35,27 @@
 	-> Với p-value = 0.03322 nhỏ hơn 0.05 và khoảng tin cậy không chứa 0, kết luận là có sự khác biệt đáng kể giữa tỷ lệ các nhóm khi phân loại theo Latency và Dataset Size. Tỷ lệ của nhóm Latency < mean(Latency) là 29.5%, cao hơn tỷ lệ của nhóm Latency > mean(Latency) là 21.5%.
 
 # Phân tích phương sai
+## Bài toán
+- Có sự khác biệt có ý nghĩa thống kê về độ trễ trung bình giữa các nhà cung cấp mô hình ngôn ngữ lớn (LLM) không?
+## Kiểm tra giả thiết
+- Xác định các mẫu có độc lập với nhau hay không.
+- Kiểm tra xem độ trễ trung bình giữa các nhà cung cấp LLM có tuân theo phân phối chuẩn hay không.
+- Kiểm tra sự tương đồng về phương sai mẫu giữa các nhà cung cấp.
+## Tiến hành
+- Lấy mẫu với tần suất trên 30
+- Test Shapiro
+- Test Levene, thấy p-value = 0.2829 > 0.05 -> Không bác bỏ H0: Phương sai giữa các nhóm là đồng nhất
+- Giả thiết không H0: Latency không phụ thuộc vào các nhà cung cấp LLM
+- Giả thiết đối H1: Latency phụ thuộc vào các nhà cung cấp LLM
+- Chạy ANOVA
+	- F-value = 0.186 -> rất nhỏ, cho thấy trung bình giữa các nhóm gần bằng nhau
+	- p-value = 0.668 > 0.5 -> không bác bỏ H0 -> Latency không phụ thuộc vào các nhà cung cấp LLM
+- Phân tích hậu định
+	- Không có cặp nào có sự khác biệt có ý nghĩa thống kê về Latency.
+	- Tất cả các đoạn confidence interval (CI) đều cắt trục 0.
+	- Điều đó có nghĩa: sự khác biệt trung bình giữa các cặp Provider không đáng kể tại mức ý nghĩa 95%.
 
-
-
+# Hồi quy tuyến tính
 
 
 # Từ từ tính :)))

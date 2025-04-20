@@ -298,6 +298,41 @@ llm_data$SpeedGroup <- ifelse(llm_data$Speed > mean(llm_data$Speed, na.rm = TRUE
 leveneTest(Latency ~ as.factor(SpeedGroup), data = llm_data)
 
 
+table(llm_data$Provider)
+# Lọc dữ liệu
+llm_data_filtered <- subset(llm_data, Provider %in% names(table(llm_data$Provider)[table(llm_data$Provider) >= 20]))
+table(llm_data_filtered$Provider)
+provider_1 <- subset(llm_data_filtered, Provider == "Cohere")
+provider_2 <- subset(llm_data_filtered, Provider == "OpenAI")
+provider_test <- subset(llm_data_filtered, Provider == "AWS")
+shapiro.test(provider_1$Latency)
+shapiro.test(provider_2$Latency)
+shapiro.test(provider_test$Latency)
+
+leveneTest(Latency ~ as.factor(Provider), llm_data_filtered)
+
+anova_latency <- aov(Latency ~ Provider, data = llm_data_filtered)
+summary(anova_latency)
+TukeyHSD(anova_latency)
+frame()
+plot.new()
+par(new = TRUE, fig = gridFIG())
+plot(TukeyHSD(anova_latency), las = 1)
+
+model <- lm(Latency ~ Provider, data = llm_data_filtered)
+summary(model)
+plot(llm_data_filtered$Provider, llm_data_filtered$Latency)
+abline(model, col = "red")
+
+
+
+# ----------------- hồi quy tuyến tính ----------------------#
+model <- lm(formula(llm_data$Speed ~ llm_data$Context.Window + llm_data$Latency + llm_data$Benchmark.MMLU + llm_data$Benchmark.Chatbot.Arena. + llm_data$Open.Source + llm_data$Price + llm_data$Dataset.Size + llm_data$Compute.Power + llm_data$Efficiency + llm_data$Quality.Rating + llm_data$Speed.Rating + llm_data$Price.Rating))
+summary(model)
+
+
+
+
 
 # --------------------------------------------------------------------- #
 
