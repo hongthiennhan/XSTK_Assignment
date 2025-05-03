@@ -1,0 +1,405 @@
+\chapter{Functional Implementation}
+\section{Tổng quan kiến trúc tập lệnh RISC}
+Bộ xử lý RISC (Reduced Instruction Set Computer) được thiết kế với tập lệnh đơn giản và hiệu quả nhằm tối ưu hóa quá trình thực thi chương trình. Trong thiết kế này, chúng tôi phát triển một RISC CPU đơn giản với các thông số cơ bản:
+
+\begin{itemize}
+    \item Kiến trúc lệnh 8-bit với cấu trúc: 3-bit opcode + 5-bit toán hạng
+
+    \item Không gian địa chỉ 32 vị trí ($2^{5} = 32$ địa chỉ)
+
+    \item Bộ nhớ dữ liệu 8-bit
+    
+    \item Thanh ghi tích lũy (Accumulator) 8-bit
+    \item Bộ đếm chương trình (Program Counter) 5-bit
+   
+\end{itemize}
+
+Dựa trên sơ đồ khối tổng quát (Hình ở chương 3), RISC CPU được thiết kế với các khối chức năng chính sau:
+
+\begin{enumerate}
+
+    \item \textbf{Program Counter (PC): }Lưu trữ địa chỉ của lệnh tiếp theo được thực thi
+    \item \textbf{Address Multiplexer (Mux): }Lựa chọn giữa địa chỉ lệnh và địa chỉ dữ liệu
+    \item \textbf{Memory: } Lưu trữ cả lệnh và dữ liệu
+
+    \item \textbf{Instruction Register (IR): }Lưu trữ lệnh hiện tại đang được thực thi
+    \item \textbf{Controller: }Điều khiển hoạt động của toàn bộ hệ thống
+    \item \textbf{Accumulator Register (AC): }Lưu trữ dữ liệu và kết quả tính toán
+    \item \textbf{Arithmetic Logic Unit (ALU): }Thực hiện các phép toán số học và logic
+\end{enumerate}
+
+\subsection{Cấu trúc lệnh}
+
+Định dạng lệnh của CPU được thiết kế đơn giản với 8-bit, trong đó:
+\begin{itemize}
+    \item 3 bit cao nhất (bit 7-5) biểu diễn mã lệnh (opcode)
+    \item 5 bit thấp nhất (bit 4-0) biểu diễn địa chỉ toán hạng hoặc giá trị trực tiếp (immediate value)
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+Opcode[3] & Operand[5] \\
+\hline
+Bit 7-5 & Bit 4-0 \\
+\hline
+\end{tabular}
+\caption{Cấu trúc lệnh 8-bit của RISC CPU}
+\label{fig:instruction_format}
+\end{figure}
+
+Cấu trúc này cho phép CPU hỗ trợ tối đa 8 lệnh khác nhau ($2^3 = 8$) và có thể truy cập đến 32 ô nhớ dữ liệu khác nhau ($2^5 = 32$).
+
+\subsection{Bộ lệnh}
+
+RISC CPU hỗ trợ 8 lệnh cơ bản (mỗi lệnh tương ứng với một opcode):
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|l|p{0.5\textwidth}|}
+\hline
+\textbf{Opcode} & \textbf{Mnemonic} & \textbf{Chức năng} & \textbf{Hoạt động} \\
+\hline
+000 & HLT & Halt & Dừng hoạt động chương trình \\
+\hline
+001 & SKZ & Skip if Zero & Kiểm tra ALU, nếu kết quả = 0 thì bỏ qua lệnh tiếp theo \\
+\hline
+010 & ADD & Add & Accumulator = Accumulator + Memory[address] \\
+\hline
+011 & AND & Logical AND & Accumulator = Accumulator AND Memory[address] \\
+\hline
+100 & XOR & Logical XOR & Accumulator = Accumulator XOR Memory[address] \\
+\hline
+101 & LDA & Load Accumulator & Accumulator = Memory[address] \\
+\hline
+110 & STO & Store Accumulator & Memory[address] = Accumulator \\
+\hline
+111 & JMP & Jump & Program Counter = address \\
+\hline
+\end{tabular}
+\caption{Bộ lệnh của RISC CPU}
+\label{tab:instruction_set}
+\end{table}
+
+\section{Hoạt động chức năng của CPU}
+
+\subsection{Luồng dữ liệu}
+
+Dựa trên sơ đồ khối, luồng dữ liệu trong RISC CPU được phân thành ba đường chính:
+
+\begin{enumerate}
+    \item \textbf{Đường Address Bus} (màu xanh lá trong sơ đồ)
+    \begin{itemize}
+        \item Xuất phát từ Program Counter hoặc phần toán hạng của Instruction Register
+        \item Đi qua Address Mux để lựa chọn nguồn địa chỉ
+        \item Kết nối đến Memory để truy xuất dữ liệu hoặc lệnh
+    \end{itemize}
+
+    \item \textbf{Đường Data Bus} (màu xanh dương trong sơ đồ)
+    \begin{itemize}
+        \item Kết nối dữ liệu giữa Memory, Instruction Register, Accumulator và ALU
+        \item Truyền dữ liệu hai chiều giữa Memory và các thành phần xử lý
+        \item Dùng để lấy lệnh từ bộ nhớ và nạp vào IR
+        \item Dùng để truyền dữ liệu giữa Memory và Accumulator
+    \end{itemize}
+    
+    \item \textbf{Đường Control Lines} (màu đỏ trong sơ đồ)
+    \begin{itemize}
+        \item Điều khiển từ Controller đến tất cả các module khác
+        \item Bao gồm các tín hiệu: sel, rd, ld\_ir, halt, inc\_pc, ld\_ac, ld\_pc, wr, data\_e
+        \item Định hướng hoạt động trong từng chu kỳ xử lý
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Chu trình thực thi lệnh}
+
+RISC CPU hoạt động theo chu trình lấy lệnh và thực thi (Fetch-Execute cycle) được phân chia thành 8 trạng thái tuần tự:
+
+\begin{enumerate}
+    \item \textbf{INST\_ADDR}: Cài đặt địa chỉ cho việc lấy lệnh
+    \begin{itemize}
+        \item PC chứa địa chỉ lệnh cần thực thi
+        \item Controller đặt sel=1 để Address Mux chọn địa chỉ từ PC
+    \end{itemize}
+    
+    \item \textbf{INST\_FETCH}: Lấy lệnh từ bộ nhớ
+    \begin{itemize}
+        \item Controller đặt rd=1 để đọc dữ liệu từ Memory
+        \item Dữ liệu từ Memory được đưa lên Data Bus
+    \end{itemize}
+
+    \item \textbf{INST\_LOAD}: Nạp lệnh vào thanh ghi lệnh (IR)
+    \begin{itemize}
+        \item Controller đặt ld\_ir=1 để nạp dữ liệu từ Data Bus vào IR
+        \item IR phân tách thành opcode và địa chỉ toán hạng
+    \end{itemize}
+
+    \item \textbf{IDLE}: Trạng thái nghỉ/chờ
+    \begin{itemize}
+        \item CPU xử lý opcode để quyết định hành động tiếp theo
+        \item Controller kiểm tra nếu opcode là HLT để dừng chương trình
+    \end{itemize}
+
+    \item \textbf{OP\_ADDR}: Cài đặt địa chỉ cho việc lấy toán hạng
+    \begin{itemize}
+        \item Controller đặt sel=0 để Address Mux chọn địa chỉ từ toán hạng của IR
+        \item Địa chỉ được đưa đến Memory
+    \end{itemize}
+
+    \item \textbf{OP\_FETCH}: Lấy toán hạng từ bộ nhớ
+    \begin{itemize}
+        \item Controller đặt rd=1 (đối với các lệnh ADD, AND, XOR, LDA)
+        \item Dữ liệu từ Memory được đưa đến ALU qua đường inB
+    \end{itemize}
+
+    \item \textbf{ALU\_OP}: Thực hiện phép toán trên ALU
+    \begin{itemize}
+        \item ALU thực hiện phép toán dựa trên opcode
+        \item Dữ liệu từ Accumulator được đưa vào inA của ALU
+        \item Kết quả được chuẩn bị để nạp vào Accumulator
+    \end{itemize}
+
+    \item \textbf{STORE}: Lưu kết quả vào bộ nhớ hoặc thanh ghi
+    \begin{itemize}
+        \item Đối với lệnh STO: Controller đặt wr=1, data\_e=1 để ghi dữ liệu từ Accumulator vào Memory
+        \item Đối với các lệnh khác: Controller đặt ld\_ac=1 để nạp kết quả từ ALU vào Accumulator
+    \end{itemize}
+\end{enumerate}
+
+Chu trình này được lặp lại liên tục cho đến khi gặp lệnh HLT hoặc có tín hiệu reset.
+
+\subsection{Cơ chế thực thi từng lệnh}
+
+\subsubsection{HLT (Halt - 000)}
+\begin{itemize}
+    \item \textbf{Mô tả}: Dừng hoạt động của CPU
+    \item \textbf{Thực thi}: 
+    \begin{itemize}
+        \item Khi nhận opcode HLT, tín hiệu halt được kích hoạt
+        \item CPU dừng thực hiện các chu kỳ lệnh tiếp theo
+    \end{itemize}
+    \item \textbf{Ứng dụng}: Kết thúc chương trình
+\end{itemize}
+
+\subsubsection{SKZ (Skip if Zero - 001)}
+\begin{itemize}
+    \item \textbf{Mô tả}: Kiểm tra kết quả trong Accumulator, nếu bằng 0 thì bỏ qua lệnh tiếp theo
+    \item \textbf{Thực thi}:
+    \begin{itemize}
+        \item ALU kiểm tra giá trị của Accumulator thông qua tín hiệu is\_zero
+        \item Nếu is\_zero = 1 (Accumulator = 0), PC được tăng thêm 1 lần nữa
+    \end{itemize}
+    \item \textbf{Ứng dụng}: Điều kiện rẽ nhánh cho cấu trúc điều khiển
+\end{itemize}
+
+\subsubsection{ADD (Add - 010)}
+\begin{itemize}
+    \item \textbf{Mô tả}: Cộng giá trị từ bộ nhớ vào Accumulator
+    \item \textbf{Thực thi}:
+    \begin{itemize}
+        \item Lấy giá trị tại địa chỉ operand từ bộ nhớ
+        \item ALU thực hiện phép cộng: Accumulator + Memory[address]
+        \item Kết quả được nạp lại vào Accumulator
+    \end{itemize}
+    \item \textbf{Ứng dụng}: Thực hiện phép tính cộng trong các ứng dụng số học
+\end{itemize}
+
+\subsubsection{AND (Logical AND - 011)}
+\begin{itemize}
+    \item \textbf{Mô tả}: Thực hiện phép AND logic giữa Accumulator và giá trị từ bộ nhớ
+    \item \textbf{Thực thi}:
+    \begin{itemize}
+        \item Lấy giá trị tại địa chỉ operand từ bộ nhớ
+        \item ALU thực hiện phép AND bit: Accumulator \& Memory[address]
+        \item Kết quả được nạp lại vào Accumulator
+    \end{itemize}
+    \item \textbf{Ứng dụng}: Thao tác bit, kiểm tra bit mask
+\end{itemize}
+
+\subsubsection{XOR (Logical XOR - 100)}
+\begin{itemize}
+    \item \textbf{Mô tả}: Thực hiện phép XOR logic giữa Accumulator và giá trị từ bộ nhớ
+    \item \textbf{Thực thi}:
+    \begin{itemize}
+        \item Lấy giá trị tại địa chỉ operand từ bộ nhớ
+        \item ALU thực hiện phép XOR bit: Accumulator $\oplus$ Memory[address]
+        \item Kết quả được nạp lại vào Accumulator
+    \end{itemize}
+    \item \textbf{Ứng dụng}: Thao tác bit, mã hóa/giải mã đơn giản
+\end{itemize}
+
+\subsubsection{LDA (Load Accumulator - 101)}
+\begin{itemize}
+    \item \textbf{Mô tả}: Nạp giá trị từ bộ nhớ vào Accumulator
+    \item \textbf{Thực thi}:
+    \begin{itemize}
+        \item Lấy giá trị tại địa chỉ operand từ bộ nhớ
+        \item Giá trị này được nạp trực tiếp vào Accumulator
+    \end{itemize}
+    \item \textbf{Ứng dụng}: Khởi tạo giá trị, đọc dữ liệu
+\end{itemize}
+
+\subsubsection{STO (Store Accumulator - 110)}
+\begin{itemize}
+    \item \textbf{Mô tả}: Lưu giá trị từ Accumulator vào bộ nhớ
+    \item \textbf{Thực thi}:
+    \begin{itemize}
+        \item Giá trị từ Accumulator được ghi vào bộ nhớ tại địa chỉ operand
+    \end{itemize}
+    \item \textbf{Ứng dụng}: Lưu kết quả tính toán, ghi dữ liệu
+\end{itemize}
+
+\subsubsection{JMP (Jump - 111)}
+\begin{itemize}
+    \item \textbf{Mô tả}: Nhảy đến địa chỉ được chỉ định để thực thi
+    \item \textbf{Thực thi}:
+    \begin{itemize}
+        \item Giá trị operand được nạp trực tiếp vào Program Counter
+        \item Lệnh tiếp theo sẽ được lấy từ địa chỉ mới
+    \end{itemize}
+    \item \textbf{Ứng dụng}: Vòng lặp, rẽ nhánh không điều kiện
+\end{itemize}
+
+\section{Các cơ chế đặc biệt}
+
+\subsection{Xử lý điều kiện rẽ nhánh}
+
+CPU được thiết kế với khả năng rẽ nhánh có điều kiện thông qua phối hợp SKZ và JMP:
+
+\begin{itemize}
+    \item \textbf{Rẽ nhánh có điều kiện}: Sử dụng SKZ để kiểm tra điều kiện (Accumulator = 0), nếu thỏa mãn thì bỏ qua lệnh JMP kế tiếp.
+    \item \textbf{Rẽ nhánh không điều kiện}: Sử dụng JMP để nhảy trực tiếp đến địa chỉ đích.
+\end{itemize}
+
+Ví dụ mẫu lệnh rẽ nhánh có điều kiện:
+\begin{verbatim}
+LDA A    ; Nạp giá trị A vào Accumulator
+SKZ      ; Kiểm tra nếu A = 0
+JMP ELSE ; Nếu A != 0, nhảy đến nhãn ELSE
+; Đoạn code khi A = 0
+JMP END  ; Nhảy đến kết thúc
+ELSE:    ; Nhãn ELSE
+; Đoạn code khi A != 0
+END:     ; Nhãn kết thúc
+\end{verbatim}
+
+\subsection{Tạo vòng lặp}
+
+CPU có thể thực hiện vòng lặp thông qua phối hợp các lệnh tính toán, so sánh và nhảy:
+
+Ví dụ vòng lặp đếm từ 5 về 0:
+\begin{verbatim}
+LDA COUNT  ; Nạp giá trị ban đầu (5)
+LOOP:
+STO COUNT  ; Lưu giá trị hiện tại
+LDA ONE    ; Nạp giá trị 1
+SKZ        ; Kiểm tra nếu giá trị = 0 (không xảy ra)
+ADD NEG_ONE; Giảm bộ đếm (Accumulator = Accumulator - 1)
+SKZ        ; Kiểm tra nếu đã đếm về 0
+JMP LOOP   ; Nếu chưa về 0, lặp lại
+; Tiếp tục chương trình khi vòng lặp kết thúc
+\end{verbatim}
+
+\section{ABC - Chi tiết thiết kế bộ điều khiển}
+
+Bộ điều khiển (Controller) là thành phần trung tâm điều phối tất cả hoạt động của CPU. Trong thiết kế này, bộ điều khiển được hiện thực dưới dạng máy trạng thái hữu hạn (Finite State Machine - FSM).
+
+\subsection{Tín hiệu điều khiển}
+
+Các tín hiệu đầu ra từ Controller điều khiển hoạt động của toàn bộ hệ thống:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Tín hiệu} & \textbf{Chức năng} \\
+\hline
+sel & Lựa chọn giữa địa chỉ từ PC (sel=1) hoặc địa chỉ toán hạng (sel=0) \\
+\hline
+rd & Kích hoạt chế độ đọc dữ liệu từ Memory \\
+\hline
+ld\_ir & Nạp dữ liệu vào Instruction Register \\
+\hline
+halt & Dừng hoạt động của CPU \\
+\hline
+inc\_pc & Tăng Program Counter lên 1 \\
+\hline
+ld\_ac & Nạp dữ liệu vào Accumulator \\
+\hline
+ld\_pc & Nạp địa chỉ mới vào Program Counter \\
+\hline
+wr & Kích hoạt chế độ ghi dữ liệu vào Memory \\
+\hline
+data\_e & Cho phép đưa dữ liệu từ Accumulator lên Data Bus \\
+\hline
+\end{tabular}
+\caption{Các tín hiệu điều khiển của Controller}
+\label{tab:control_signals}
+\end{table}
+
+\subsection{Máy trạng thái cho chu trình lệnh}
+
+Bộ điều khiển triển khai máy trạng thái 8 trạng thái cho chu trình lệnh. Các tín hiệu điều khiển được tạo ra dựa trên trạng thái hiện tại và opcode của lệnh đang thực thi:
+
+\begin{table}[h]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|l|}
+\hline
+\textbf{Trạng thái} & \textbf{sel} & \textbf{rd} & \textbf{ld\_ir} & \textbf{halt} & \textbf{inc\_pc} & \textbf{ld\_ac} & \textbf{ld\_pc} & \textbf{wr} & \textbf{data\_e} & \textbf{Chú thích} \\
+\hline
+INST\_ADDR & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & Đặt địa chỉ lệnh \\
+\hline
+INST\_FETCH & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & Đọc lệnh từ bộ nhớ \\
+\hline
+INST\_LOAD & 1 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & Nạp lệnh vào IR \\
+\hline
+IDLE & 1 & 1 & 1 & HALT & 0 & 0 & 0 & 0 & 0 & Giải mã lệnh \\
+\hline
+OP\_ADDR & 0 & 0 & 0 & 0 & SKZ\&zero & 0 & 0 & 0 & 0 & Đặt địa chỉ toán hạng \\
+\hline
+OP\_FETCH & 0 & ALUOP & 0 & 0 & 0 & 0 & 0 & 0 & 0 & Đọc toán hạng \\
+\hline
+ALU\_OP & 0 & ALUOP & 0 & 0 & 0 & 0 & JMP & 0 & 0 & Thực hiện phép toán \\
+\hline
+STORE & 0 & ALUOP & 0 & 0 & 0 & ALUOP & JMP & STO & STO & Lưu kết quả \\
+\hline
+\end{tabular}
+}
+\caption{Máy trạng thái của Controller}
+\label{tab:state_machine}
+\end{table}
+
+Trong đó:
+\begin{itemize}
+    \item HALT = 1 khi opcode = 000 (HLT)
+    \item SKZ = 1 khi opcode = 001 (SKZ)
+    \item ALUOP = 1 khi opcode = 010 (ADD), 011 (AND), 100 (XOR), hoặc 101 (LDA)
+    \item STO = 1 khi opcode = 110 (STO)
+    \item JMP = 1 khi opcode = 111 (JMP)
+    \item zero = tín hiệu is\_zero từ ALU
+\end{itemize}
+
+\subsection{Hiện thực tối ưu và mở rộng}
+
+\subsubsection{Tối ưu quá trình thực thi}
+
+Để tối ưu quá trình thực thi, CPU có những điều chỉnh đặc biệt cho các lệnh khác nhau:
+
+\begin{itemize}
+    \item \textbf{Xử lý lệnh JMP}: Bộ điều khiển nạp trực tiếp địa chỉ từ toán hạng vào PC trong trạng thái ALU\_OP và STORE, giúp rút ngắn chu kỳ xử lý
+    \item \textbf{Xử lý lệnh SKZ}: Tăng PC thêm 1 trong trạng thái OP\_ADDR nếu Accumulator = 0 để bỏ qua lệnh tiếp theo
+    \item \textbf{Cơ chế pipeline đơn giản}: Sử dụng IDLE state để giải mã lệnh trong khi chuẩn bị địa chỉ toán hạng
+\end{itemize}
+
+\subsubsection{Hướng mở rộng}
+
+CPU có thể được mở rộng trong tương lai theo các hướng:
+
+\begin{itemize}
+    \item Bổ sung thêm các lệnh tính toán số học nâng cao như nhân, chia
+    \item Mở rộng không gian địa chỉ lên 6-bit hoặc 8-bit
+    \item Thêm các thanh ghi đa năng để lưu trữ dữ liệu tạm thời
+    \item Hiện thực pipeline nhiều tầng để tăng hiệu suất xử lý
+\end{itemize}
