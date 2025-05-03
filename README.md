@@ -43,7 +43,7 @@
 - Kiểm tra xem độ trễ trung bình giữa các nhà cung cấp LLM có tuân theo phân phối chuẩn hay không.
 - Kiểm tra sự tương đồng về phương sai mẫu giữa các nhà cung cấp.
 ## Tiến hành
-- Lấy mẫu với tần suất trên 30
+- Lấy mẫu với tần suất trên 20 (do số lượng mẫu trên 30 chỉ có hai nhà cung cấp, khó có thể đánh giá được, và số lượng mẫu của dataset không nhiều, nên lấy mẫu có tần suất trên 20)
 - Test Shapiro
 - Test Levene, thấy p-value = 0.2829 > 0.05 -> Không bác bỏ H0: Phương sai giữa các nhóm là đồng nhất
 - Giả thiết không H0: Latency không phụ thuộc vào các nhà cung cấp LLM
@@ -55,7 +55,7 @@
 	- Không có cặp nào có sự khác biệt có ý nghĩa thống kê về Latency.
 	- Tất cả các đoạn confidence interval (CI) đều cắt trục 0.
 	- Điều đó có nghĩa: sự khác biệt trung bình giữa các cặp Provider không đáng kể tại mức ý nghĩa 95%.
-
+	- Dựa vào biểu đồ, ta có thể thấy các mô hình LLM của AWS có xu hướng thấp hơn các nhà phân phối khác
 # Hồi quy tuyến tính
 
 

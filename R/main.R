@@ -1,3 +1,31 @@
+# INSTALL PACKAGE
+# install.packages("tidyr")
+# install.packages("dplyr")
+# install.packages("stringr")
+# install.packages("statip")
+# install.packages("ggplot2")
+# install.packages("grid")
+# install.packages("gridBase")
+# install.packages("corrplot")
+# install.packages("ggpubr")
+# install.packages("zoo")
+# install.packages("car")
+
+# ---------------------------
+# Includes
+library(tidyr)
+library(stringr)
+library(dplyr)
+library(statip)
+library(ggplot2)
+library(grid)
+library(gridBase)
+library(corrplot)
+library(ggpubr)
+library(zoo)
+library(car)
+
+
 # ---------- [Đọc thông tin dữ liệu] ---------- #
 # Đọc dữ liệu từ file CSV
 llm_data <- read.csv("D:/HCMUT/XSTK/XSTK_Assignment/data/llm_comparison_dataset.csv")
@@ -8,7 +36,7 @@ names(llm_data)[names(llm_data) == "Latency..sec."] <- "Latency"
 names(llm_data)[names(llm_data) == "Benchmark..MMLU."] <- "Benchmark.MMLU"
 names(llm_data)[names(llm_data) == "Benchmark..Chatbot.Arena."] <- "Benchmark.Chatbot.Arena."
 names(llm_data)[names(llm_data) == "Price...Million.Tokens"] <- "Price"
-names(llm_data)[names(llm_data) == "Training.Compute.Power"] <- "Dataset.Size"
+names(llm_data)[names(llm_data) == "Training.Dataset.Size"] <- "Dataset.Size"
 names(llm_data)[names(llm_data) == "Energy.Efficiency"] <- "Efficiency"
 
 # Kiểm tra kích thước (số dòng, số cột)
@@ -286,53 +314,79 @@ cat("Tỷ lệ Latency < mean và Speed > mean: ", round(ratio_latency_low * 100
 prop_result <- prop.test(c(num_latency_high, num_latency_low), c(total, total),
                          alternative = "less", correct = FALSE)
 prop_result
-# --------------------------------------------------------------------- #
-# Kiểm định Shapiro???
-shapiro.test(llm_data$Speed)
-shapiro.test(llm_data$Latency)
 
-llm_data$SpeedGroup <- ifelse(llm_data$Speed > mean(llm_data$Speed, na.rm = TRUE),
-                                    "HighSpeed", "LowSpeed")
-
-leveneTest(Latency ~ as.factor(SpeedGroup), data = llm_data)
-
-
+# ---------- [Phân tích phương sai] ---------- #
 table(llm_data$Provider)
-# Lọc dữ liệu
+# Xử lý mẫu
 llm_data_filtered <- subset(llm_data, Provider %in% names(table(llm_data$Provider)[table(llm_data$Provider) >= 20]))
 table(llm_data_filtered$Provider)
-provider_1 <- subset(llm_data_filtered, Provider == "Cohere")
-provider_2 <- subset(llm_data_filtered, Provider == "OpenAI")
-provider_test <- subset(llm_data_filtered, Provider == "AWS")
+
+# Kiểm tra phân phối chuẩn
+provider_1 <- subset(llm_data_filtered, Provider == "AWS")
+provider_2 <- subset(llm_data_filtered, Provider == "Cohere")
+provider_3 <- subset(llm_data_filtered, Provider == "Deepseek")
+provider_4 <- subset(llm_data_filtered, Provider == "Google")
+provider_5 <- subset(llm_data_filtered, Provider == "Meta AI")
+provider_6 <- subset(llm_data_filtered, Provider == "Mistral AI")
+provider_7 <- subset(llm_data_filtered, Provider == "OpenAI")
 shapiro.test(provider_1$Latency)
 shapiro.test(provider_2$Latency)
-shapiro.test(provider_test$Latency)
+shapiro.test(provider_3$Latency)
+shapiro.test(provider_4$Latency)
+shapiro.test(provider_5$Latency)
+shapiro.test(provider_6$Latency)
+shapiro.test(provider_7$Latency)
 
+# Đánh giá tính đồng nhất phương sai
+library(car)
 leveneTest(Latency ~ as.factor(Provider), llm_data_filtered)
 
+# ANOVA
 anova_latency <- aov(Latency ~ Provider, data = llm_data_filtered)
 summary(anova_latency)
 TukeyHSD(anova_latency)
 frame()
 plot.new()
+library(grid)
+library(gridBase)
 par(new = TRUE, fig = gridFIG())
 plot(TukeyHSD(anova_latency), las = 1)
 
-model <- lm(Latency ~ Provider, data = llm_data_filtered)
+# ----------------- Hồi quy tuyến tính ----------------------#
+model <- lm(formula(llm_data$Benchmark.MMLU ~ llm_data$Context.Window + llm_data$Latency + llm_data$Speed + llm_data$Benchmark.Chatbot.Arena. + llm_data$Open.Source + llm_data$Price + llm_data$Compute.Power + llm_data$Efficiency + llm_data$Quality.Rating + llm_data$Speed.Rating + llm_data$Price.Rating))
 summary(model)
-plot(llm_data_filtered$Provider, llm_data_filtered$Latency)
-abline(model, col = "red")
+model_new <- lm(formula(llm_data$Benchmark.MMLU ~ llm_data$Quality.Rating + llm_data$Speed.Rating))
+summary(model_new)
+confint(model_new, level = 0.95)
+par(mfrow = c(2, 2))
+plot(model_new)
 
+vif(model_new)
+vif_value <- vif(model_new)
+vp0 <- viewport(x = .15, y = 0, just = c("left", "bottom"), width = 0.85, height = 1)
+pushViewport(vp0)
 
+par(mfrow = c(1, 1))
+par(new = TRUE, fig = gridFIG())
+par(mar = c(5, 14, 4, 2))
+barplot(vif_value, main = "VIF Values", horiz = TRUE, col = "steelblue",
+           xlim = c(0,5), las = 2, names.arg = c("Quality.Rating","Speed.Rating"))
+abline(v = 5, lwd = 5, lty = 2)
 
-# ----------------- hồi quy tuyến tính ----------------------#
-model <- lm(formula(llm_data$Speed ~ llm_data$Context.Window + llm_data$Latency + llm_data$Benchmark.MMLU + llm_data$Benchmark.Chatbot.Arena. + llm_data$Open.Source + llm_data$Price + llm_data$Compute.Power + llm_data$Compute.Power + llm_data$Efficiency + llm_data$Quality.Rating + llm_data$Speed.Rating + llm_data$Price.Rating))
-summary(model)
-
-
-
-
-
+df <- summary_stat %>%
+  count_and_ratio_outliers(Quality.Rating) %>%
+  count_and_ratio_outliers(Speed.Rating) %>%
+  subset(select = -c(
+    Context.Window,
+    Latency,
+    Speed,
+    Benchmark.Chatbot.Arena.,
+    Open.Source,
+    Price,
+    Compute.Power,
+    Efficiency,
+    Price.Rating
+  ))
 # --------------------------------------------------------------------- #
 
 
