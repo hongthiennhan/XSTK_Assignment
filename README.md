@@ -37,10 +37,10 @@
 
 # Phân tích phương sai
 ## Bài toán
-- Có sự khác biệt có ý nghĩa thống kê về độ trễ trung bình giữa các nhà cung cấp mô hình ngôn ngữ lớn (LLM) không?
+- Có sự khác biệt có ý nghĩa thống kê về hiệu suất năng lượng trung bình giữa các nhà cung cấp mô hình ngôn ngữ lớn (LLM) không?
 ## Kiểm tra giả thiết
 - Xác định các mẫu có độc lập với nhau hay không.
-- Kiểm tra xem độ trễ trung bình giữa các nhà cung cấp LLM có tuân theo phân phối chuẩn hay không.
+- Kiểm tra xem hiệu suất năng lượng trung bình giữa các nhà cung cấp LLM có tuân theo phân phối chuẩn hay không.
 - Kiểm tra sự tương đồng về phương sai mẫu giữa các nhà cung cấp.
 ## Tiến hành
 - Lấy mẫu với tần suất trên 20 (do số lượng mẫu trên 30 chỉ có hai nhà cung cấp, khó có thể đánh giá được, và số lượng mẫu của dataset không nhiều, nên lấy mẫu có tần suất trên 20)

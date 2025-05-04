@@ -275,22 +275,27 @@ corrplot(cor_matrix,
 dev.off()
 
 # ---------- [Kiểm định một mẫu phân phối chuẩn] ---------- #
+par(mfrow = c(1, 1))
+qqnorm(llm_data$Latency, main = "Q-Q Plot of Latency")
+qqline(llm_data$Latency, col = "red")
+
 # Kiểm định Shapiro
-shapiro.test(llm_data$Speed)
+# shapiro.test(llm_data$Speed)
 shapiro.test(llm_data$Latency)
-shapiro.test(llm_data$Price)
-shapiro.test(llm_data$Dataset.Size)
-shapiro.test(llm_data$Compute.Power)
-shapiro.test(llm_data$Efficiency)
-# Toàn bộ không tuân theo phân phối chuẩn vì p << 0.05
+# shapiro.test(llm_data$Price)
+# shapiro.test(llm_data$Dataset.Size)
+# shapiro.test(llm_data$Compute.Power)
+# shapiro.test(llm_data$Efficiency)
+
+# Không tuân theo phân phối chuẩn vì p << 0.05
 
 # Tìm khoảng ước lượng
-t.test(llm_data$Speed, conf.level = 0.95)
+# t.test(llm_data$Speed, conf.level = 0.95)
 t.test(llm_data$Latency, conf.level = 0.95)
-t.test(llm_data$Price, conf.level = 0.95)
-t.test(llm_data$Dataset.Size, conf.level = 0.95)
-t.test(llm_data$Compute.Power, conf.level = 0.95)
-t.test(llm_data$Efficiency, conf.level = 0.95)
+# t.test(llm_data$Price, conf.level = 0.95)
+# t.test(llm_data$Dataset.Size, conf.level = 0.95)
+# t.test(llm_data$Compute.Power, conf.level = 0.95)
+# t.test(llm_data$Efficiency, conf.level = 0.95)
 
 # ---------- [Kiểm định hai mẫu phân phối chuẩn] ---------- #
 # Tính giá trị trung bình
@@ -331,33 +336,33 @@ provider_4 <- subset(llm_data_filtered, Provider == "Google")
 provider_5 <- subset(llm_data_filtered, Provider == "Meta AI")
 provider_6 <- subset(llm_data_filtered, Provider == "Mistral AI")
 provider_7 <- subset(llm_data_filtered, Provider == "OpenAI")
-shapiro.test(provider_1$Latency)
-shapiro.test(provider_2$Latency)
-shapiro.test(provider_3$Latency)
-shapiro.test(provider_4$Latency)
-shapiro.test(provider_5$Latency)
-shapiro.test(provider_6$Latency)
-shapiro.test(provider_7$Latency)
+shapiro.test(provider_1$Efficiency)
+shapiro.test(provider_2$Efficiency)
+shapiro.test(provider_3$Efficiency)
+shapiro.test(provider_4$Efficiency)
+shapiro.test(provider_5$Efficiency)
+shapiro.test(provider_6$Efficiency)
+shapiro.test(provider_7$Efficiency)
 
 # Đánh giá tính đồng nhất phương sai
 library(car)
-leveneTest(Latency ~ as.factor(Provider), llm_data_filtered)
+leveneTest(Efficiency ~ as.factor(Provider), llm_data_filtered)
 
 # ANOVA
-anova_latency <- aov(Latency ~ Provider, data = llm_data_filtered)
-summary(anova_latency)
-TukeyHSD(anova_latency)
+anova_efficiency <- aov(Efficiency ~ Provider, data = llm_data_filtered)
+summary(anova_efficiency)
+
+TukeyHSD(anova_efficiency)
 frame()
 plot.new()
-library(grid)
-library(gridBase)
-par(new = TRUE, fig = gridFIG())
-plot(TukeyHSD(anova_latency), las = 1)
+pushViewport(viewport(layout = grid.layout(1, 1)))
+par(fig = c(0.15, 0.95, 0, 1), new = TRUE)
+plot(TukeyHSD(anova_efficiency), las = 1)
 
 # ----------------- Hồi quy tuyến tính ----------------------#
 model <- lm(formula(llm_data$Benchmark.MMLU ~ llm_data$Context.Window + llm_data$Latency + llm_data$Speed + llm_data$Benchmark.Chatbot.Arena. + llm_data$Open.Source + llm_data$Price + llm_data$Compute.Power + llm_data$Efficiency + llm_data$Quality.Rating + llm_data$Speed.Rating + llm_data$Price.Rating))
 summary(model)
-model_new <- lm(formula(llm_data$Benchmark.MMLU ~ llm_data$Quality.Rating + llm_data$Speed.Rating))
+model_new <- lm(formula(llm_data$Benchmark.MMLU ~ llm_data$Quality.Rating + llm_data$Speed.Rating + llm_data$Speed + llm_data$Price.Rating))
 summary(model_new)
 confint(model_new, level = 0.95)
 par(mfrow = c(2, 2))
@@ -368,11 +373,12 @@ vif_value <- vif(model_new)
 vp0 <- viewport(x = .15, y = 0, just = c("left", "bottom"), width = 0.85, height = 1)
 pushViewport(vp0)
 
+plot.new()
 par(mfrow = c(1, 1))
 par(new = TRUE, fig = gridFIG())
-par(mar = c(5, 14, 4, 2))
+par(mar = c(5, 4, 1, 2))
 barplot(vif_value, main = "VIF Values", horiz = TRUE, col = "steelblue",
-           xlim = c(0,5), las = 2, names.arg = c("Quality.Rating","Speed.Rating"))
+           xlim = c(0,5), las = 2, names.arg = c("Quality.Rating","Speed.Rating", "Speed", "Price.Rating"))
 abline(v = 5, lwd = 5, lty = 2)
 
 # df <- summary_stat %>%
@@ -391,6 +397,53 @@ abline(v = 5, lwd = 5, lty = 2)
 #   ))
 # --------------------------------------------------------------------- #
 
+# ----------------- Dự đoán trên mô hình hồi quy tuyến tính ----------------------#
+set.seed(123)  # Đặt seed để kết quả có thể tái lập
+
+train_index <- sample(seq_len(nrow(llm_data)), size = 0.99 * nrow(llm_data))
+
+# Tạo tập huấn luyện và kiểm tra
+df_train <- llm_data[train_index, ]
+df_test <- llm_data[-train_index, ]
+
+x_test <- llm_data[-train_index, !(names(llm_data) %in% "Benchmark.MMLU")]
+y_test <- llm_data[-train_index, "Benchmark.MMLU"]
+
+model_predict <- lm(Benchmark.MMLU ~ Quality.Rating + Speed.Rating + Speed + Price.Rating, data = df_train)
+predictions <- predict(model_predict, newdata = df_test)
+
+anova(model_predict) %>% print()
+summary(model_predict) %>% print()
+y_pred <- predict(model_predict, newdata = x_test, interval = "confidence")
+mse <- mean((y_test - y_pred)^2)
+mae <- mean(abs(y_test - y_pred))
+rmse <- sqrt(mse)
+# Calculate R-squared
+rss <- sum((y_test - y_pred)^2)
+tss <- sum((y_test - mean(y_test))^2)
+r_squared <- 1 - (rss / tss)
+data.frame(mse, mae, rmse, r_squared) %>% print()
+
+
+
+# actuals <- df_test$Benchmark.MMLU
+# plot.new()
+# par(mfrow = c(1, 1))
+# plot(actuals, predictions,
+#      xlab = "Giá trị thực tế (Actual Benchmark.MMLU)",
+#      ylab = "Giá trị dự đoán (Predicted)",
+#      main = "So sánh Dự đoán vs Thực tế",
+#      col = "blue", pch = 16)
+# abline(0, 1, col = "red", lwd = 2)  # Đường y = x
+
+
+
+
+
+
+
+
+# --------------------------------------------------------------------- #
 # ANOVA and Linear Models with log(Latency)
 
 # --- Model 1: log(Latency) ~ Provider ---
