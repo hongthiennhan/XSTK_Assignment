@@ -28,7 +28,7 @@ library(car)
 
 # ---------- [Đọc thông tin dữ liệu] ---------- #
 # Đọc dữ liệu từ file CSV
-llm_data <- read.csv("D:/HCMUT/XSTK/XSTK_Assignment/data/llm_comparison_dataset.csv")
+llm_data <- read.csv("../data/llm_comparison_dataset.csv")
 
 # Đặt lại tên biến
 names(llm_data)[names(llm_data) == "Speed..tokens.sec."] <- "Speed"
@@ -117,11 +117,13 @@ summary_stat <- sapply(numeric_vars, function(x) {
 
 # Chuyển về data frame
 summary_df <- as.data.frame(t(summary_stat))
+summary_df <- data.frame(lapply(summary_df, function(x) formatC(x, format = "f", digits = 4, drop0trailing = TRUE)))
 print(summary_df)
+table(llm_data$Provider)
 table(llm_data$Provider)
 
 # ---------- [Vẽ đồ thị Histogram] ---------- #
-png("output/figures/histograms.png", width = 1280, height = 720)
+png("../output/figures/histograms.png", width = 1280, height = 720)
 print(colnames(llm_data))
 par(mfrow = c(2, 3))
 
@@ -163,7 +165,7 @@ hist(llm_data$Efficiency,
 dev.off()
 
 # ---------- [Vẽ đồ thị Box Plot một biến] ---------- #
-png("output/figures/boxplots.png", width = 1280, height = 720)
+png("../output/figures/boxplots.png", width = 1280, height = 720)
 par(mfrow = c(2, 3))
 
 boxplot(llm_data$Speed, 
@@ -204,7 +206,7 @@ boxplot(llm_data$Efficiency,
 dev.off()
 
 # ---------- [Vẽ đồ thị Box Plot theo Provider] ---------- #
-png("output/figures/boxplots_provider.png", width = 1280, height = 720)
+png("../output/figures/boxplots_provider.png", width = 1280, height = 720)
 par(mfrow = c(2, 3))
 
 boxplot(`Speed` ~ Provider, data = llm_data,
@@ -216,7 +218,7 @@ boxplot(`Latency` ~ Provider, data = llm_data,
         xlab = "Latency (sec)",
         col = "lightgreen")
 boxplot(`Price` ~ Provider, data = llm_data,
-        main = "Price / Million Tokens by Model",
+        main = "Price / Million Tokens by Provider",
         xlab = "Price / Million Tokens",
         col = "lightgreen")
 boxplot(`Dataset.Size` ~ Provider, data = llm_data,
@@ -228,14 +230,14 @@ boxplot(`Compute.Power` ~ Provider, data = llm_data,
         xlab = "Compute Power",
         col = "lightgreen")
 boxplot(`Efficiency` ~ Provider, data = llm_data,
-        main = "Energy Efficiency by Model",
+        main = "Energy Efficiency by Provider",
         xlab = "Energy Efficiency",
         col = "lightgreen")
 dev.off()
 
 # ---------- [Kiểm tra phân phối chuẩn] ---------- #
-png("output/figures/qq_plot.png", width = 1280, height = 720)
-par(mfrow = c(2, 3))
+png("../output/figures/qq_plot.png", width = 720, height = 1280)
+par(mfrow = c(3, 2))
 qqnorm(llm_data$Speed, main = "Q-Q Plot of Speed")
 qqline(llm_data$Speed, col = "red")
 qqnorm(llm_data$Latency, main = "Q-Q Plot of Latency")
@@ -260,7 +262,7 @@ numeric_vars <- llm_data[, sapply(llm_data, is.numeric)]
 cor_matrix <- cor(numeric_vars, use = "complete.obs", method = "pearson")
 
 # 4. Vẽ biểu đồ tương quan đối xứng hình vuông
-png("output/figures/corrplot.png", width = 1280, height = 720)
+png("../output/figures/corrplot.png", width = 1280, height = 1280)
 par(mfrow = c(1, 1))
 corrplot(cor_matrix,
          method = "color",     # Hình vuông
@@ -373,53 +375,60 @@ barplot(vif_value, main = "VIF Values", horiz = TRUE, col = "steelblue",
            xlim = c(0,5), las = 2, names.arg = c("Quality.Rating","Speed.Rating"))
 abline(v = 5, lwd = 5, lty = 2)
 
-df <- summary_stat %>%
-  count_and_ratio_outliers(Quality.Rating) %>%
-  count_and_ratio_outliers(Speed.Rating) %>%
-  subset(select = -c(
-    Context.Window,
-    Latency,
-    Speed,
-    Benchmark.Chatbot.Arena.,
-    Open.Source,
-    Price,
-    Compute.Power,
-    Efficiency,
-    Price.Rating
-  ))
+# df <- summary_stat %>%
+#   count_and_ratio_outliers(Quality.Rating) %>%
+#   count_and_ratio_outliers(Speed.Rating) %>%
+#   subset(select = -c(
+#     Context.Window,
+#     Latency,
+#     Speed,
+#     Benchmark.Chatbot.Arena.,
+#     Open.Source,
+#     Price,
+#     Compute.Power,
+#     Efficiency,
+#     Price.Rating
+#   ))
 # --------------------------------------------------------------------- #
 
+# ANOVA and Linear Models with log(Latency)
 
-
-# Lọc dữ liệu có đầy đủ thông tin
-latency_data <- llm_data[!is.na(llm_data$Latency) & !is.na(llm_data$Provider), ]
-
+# --- Model 1: log(Latency) ~ Provider ---
 # ANOVA
-anova_latency <- aov(Latency..sec. ~ Provider, data = latency_data)
-summary(anova_latency)
+anova_log_latency_provider <- aov(log(Latency) ~ Provider, data = llm_data) # Use llm_data and log(Latency)
+summary(anova_log_latency_provider)
 
-# Kiểm định giả thuyết:
-  # H0: Độ trễ trung bình giữa các nhà cung cấp là như nhau
-  # H1: Có ít nhất một nhà cung cấp có độ trễ trung bình khác biệt
-# Nếu p-value < 0.05 → Bác bỏ H0 → Có sự khác biệt có ý nghĩa
+# Linear Model
+model1_log <- lm(log(Latency) ~ Provider, data = llm_data) # Use log(Latency)
+summary(model1_log)
 
-# Kết quả: 0.05 < p < 0.1: "Có xu hướng khác biệt về độ trễ giữa các nhà cung cấp, nhưng chưa đủ mạnh để kết luận một cách chắc chắn ở mức ý nghĩa 5%."
+# Boxplot for log(Latency)
+boxplot(log(Latency) ~ Provider, data = llm_data,
+        col = "lightgreen", main = "log(Latency) theo từng Provider",
+        ylab = "log(Latency)")
 
-model1 <- lm(Latency..sec. ~ Provider, data = llm_data)
-summary(model1)
+# --- Model 2: log(Latency) ~ Provider * Speed + Other Predictors ---
 
-boxplot(Latency ~ Provider, data = llm_data,
-        col = "lightgreen", main = "Latency theo từng Provider")
-
-ggplot(llm_data, aes(x = Speed..tokens.sec., y = Latency, color = Provider)) +
+# Scatter plot with log(Latency)
+ggplot(llm_data, aes(x = Speed, y = log(Latency), color = Provider)) + # Use log(Latency)
   geom_point(alpha = 0.5) +
   geom_smooth(method = "lm", se = FALSE) +
-  labs(title = "Hồi quy Latency ~ Speed theo từng Provider",
+  labs(title = "Hồi quy log(Latency) ~ Speed theo từng Provider",
        x = "Speed (tokens/sec)",
-       y = "Latency")
+       y = "log(Latency)")
 
-anova2 <- aov(Latency..sec. ~ Provider + Speed..tokens.sec. + Compute.Power, data = llm_data)
-summary(anova2)
+# More comprehensive ANOVA model
+# Including interaction and other potentially relevant variables
+anova_log_complex <- aov(log(Latency) ~ Provider * Speed + Compute.Power + Context.Window + Price + Dataset.Size + Efficiency, data = llm_data)
+summary(anova_log_complex)
+
+# Check assumptions for the complex model
+png("../output/figures/anova_log_complex_plots.png", width = 1000, height = 1000) # Open PNG device
+par(mfrow = c(2, 2)) # Set 2x2 plot layout
+plot(anova_log_complex)
+dev.off()
+
+par(mfrow = c(1, 1))
 
 
 
