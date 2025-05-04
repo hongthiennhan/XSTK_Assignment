@@ -436,7 +436,7 @@ data.frame(mse, mae, rmse, r_squared) %>% print()
 #      col = "blue", pch = 16)
 # abline(0, 1, col = "red", lwd = 2)  # Đường y = x
 
-
+# ----------------- Phần thảo luận và mở rộng ----------------------#
 
 
 
